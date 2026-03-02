@@ -1,0 +1,6 @@
+venv/
+.env
+__pycache__/
+temp.pdf
+faiss_index.bin
+chunks.json
