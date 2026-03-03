@@ -1,253 +1,154 @@
-📚 Smart Tutor – AI Textbook Ingestion Engine
-🧠 Project Overview
+# 📚 Smart Tutor – Ingestion & Chunking System
 
-This module is the core engine of the Smart Tutor system.
+This module is responsible for:
 
-It is responsible for:
+1. Downloading textbook PDFs from Supabase Storage
+2. Extracting text from the PDF
+3. Cleaning the text
+4. Performing advanced semantic chunking
+5. Generating embeddings for each chunk
+6. Storing chunks + embeddings in Supabase
+7. Building a local FAISS index (for testing retrieval)
 
-Fetching textbooks from Supabase storage
+---
 
-Extracting text from scanned PDFs using OCR
+# 🧠 What This Module Does (Simple Explanation)
 
-Cleaning and preprocessing the text
+Think of this system like:
 
-Breaking text into smart overlapping chunks
+Step 1 → Take a big textbook  
+Step 2 → Break it into small understandable pieces  
+Step 3 → Convert each piece into numbers (embeddings)  
+Step 4 → Store everything in the cloud  
+Step 5 → Allow teammates to search inside it  
 
-Generating embeddings (vector representations)
+This prepares the data for the AI Tutor.
 
-Storing them in FAISS for fast similarity search
+---
 
-Retrieving relevant content based on user questions
+# 🗂 Project Flow
 
-This system is designed for Class 9–12 textbooks.
+Supabase Storage (PDF)
+        ↓
+Text Extraction
+        ↓
+Clean Text
+        ↓
+Advanced Chunking
+        ↓
+Embedding Generation
+        ↓
+Supabase Table (book_chunks)
+        ↓
+Teammate builds vector search
 
-🏗️ How The System Works
-Step 1: User selects
+---
 
-Class (example: class_09)
+# 📦 Supabase Setup
 
-Subject (example: maths)
+### Bucket Name
+Store PDFs inside:
 
-Chapter file (example: ch_01.pdf)
 
-Step 2: System downloads PDF
+class_9/Science/Science_Ch01.pdf
+class_9/Hindi/Hindi_Ch01.pdf
 
-The selected chapter is downloaded from Supabase Storage.
 
-Step 3: OCR Extraction
+Folder structure must match:
 
-Since many textbooks are scanned PDFs, we use:
 
-Poppler → converts PDF to images
+class_name/subject/chapter.pdf
 
-Tesseract OCR → extracts text from images
 
-Step 4: Text Cleaning
+---
 
-We remove:
+# 🗄 Supabase Table Structure
 
-Extra spaces
+Table Name: `book_chunks`
 
-Unwanted characters
+Columns:
 
-Noise from OCR
+- id (auto)
+- class (text)
+- subject (text)
+- chapter (text)
+- chunk_index (integer)
+- content (text)
+- embedding (jsonb)
 
-Step 5: Smart Chunking
+---
 
-Text is split into chunks using:
+# ⚙️ How To Run
 
-Chunk size: 600 words
+### 1. Activate Virtual Environment
 
-Overlap: 100 words
 
-This ensures:
-
-Context continuity
-
-Better semantic understanding
-
-Step 6: Embedding Generation
-
-We use:
-
-sentence-transformers/all-MiniLM-L6-v2
-
-Each chunk is converted into a numeric vector representation.
-
-Step 7: FAISS Indexing
-
-We store vectors inside FAISS for:
-
-Fast similarity search
-
-Low memory usage
-
-Scalable retrieval
-
-Step 8: Semantic Search
-
-When a user asks a question:
-
-Question is converted to embedding
-
-FAISS finds top 5 most relevant chunks
-
-Relevant content is returned
-
-📂 Supabase Storage Structure
-
-The bucket must follow this format:
-
-books/
-│
-├── class_9/
-│   ├── Maths/
-│   │   ├── Maths_Ch01.pdf
-│   │   ├── Maths_Ch02.pdf
-│   ├── science/
-│
-├── class_10/
-│   ├── maths/
-│   ├── science/
-│
-├── class_11/
-├── class_12/
-
-⚠ Folder names are case-sensitive.
-
-⚙️ Installation Guide
-1️⃣ Clone the repository
-git clone https://github.com/krashanu6-sudo/SmartTutor.git
-2️⃣ Create Virtual Environment
-py -3.11 -m venv venv
 venv\Scripts\activate
-3️⃣ Install Dependencies
+
+
+### 2. Install Requirements
+
+
 pip install -r requirements.txt
-4️⃣ Install Required Tools (Windows)
-Install Tesseract OCR
 
-Download and install:
-https://github.com/tesseract-ocr/tesseract
 
-Default path:
+(If no requirements file, manually install:)
 
-C:\Program Files\Tesseract-OCR\tesseract.exe
-Install Poppler
+pip install faiss-cpu sentence-transformers pymupdf supabase python-dotenv
 
-Download:
-https://github.com/oschwartz10612/poppler-windows/releases
 
-Extract to:
+### 3. Set Environment Variables (.env)
 
-C:\poppler
 
-Make sure:
+SUPABASE_URL=your_url
+SUPABASE_KEY=your_key
+BUCKET_NAME=your_bucket_name
 
-C:\poppler\Library\bin
 
-contains:
+### 4. Run Program
 
-pdfinfo.exe
-pdftoppm.exe
-5️⃣ Create .env File
 
-Inside project root:
-
-SUPABASE_URL=your_project_url
-SUPABASE_KEY=your_publishable_key
-BUCKET_NAME=books
-
-⚠ Do NOT commit .env file.
-
-▶ Running The System
 python main.py
 
-You will be asked:
 
-Enter class:
-Enter subject:
-Enter chapter:
-Enter your question:
+Then enter:
 
-Example:
 
 class_9
-Maths
-Maths_Ch01.pdf
-What are real numbers?
+Science
+Science_Ch01
 
-The system will:
 
-Download the chapter
+---
 
-Extract text
+# 📊 What Gets Stored In Cloud
 
-Build vector index
+For each chunk we store:
 
-Retrieve relevant content
+- Clean text content
+- Embedding vector (JSON format)
+- Class, subject, chapter metadata
 
-💾 Index Caching
+Example row:
 
-After first run:
+| class   | subject  | chapter        | chunk_index | content        | embedding |
+|----------|-----------|---------------|--------------|----------------|-----------|
+| class_9 | Science  | Science_Ch01 | 0            | Matter is...   | [0.234...]|
 
-faiss_index.bin
+---
 
-chunks.json
+# 🔍 How Teammates Can Use This
 
-Are saved locally.
+They can fetch chunks using:
 
-Next time, system loads index directly (faster performance).
+```python
+data = supabase.table("book_chunks") \
+    .select("*") \
+    .eq("class", "class_9") \
+    .eq("subject", "Science") \
+    .eq("chapter", "Science_Ch01") \
+    .execute()
 
-🧩 Technologies Used
+Then rebuild FAISS index from stored embeddings.
 
-Python 3.11
-
-Supabase (Cloud Storage)
-
-Tesseract OCR
-
-Poppler
-
-SentenceTransformers
-
-FAISS
-
-NumPy
-
-🎯 Why This Module Is Important
-
-This is the foundation layer of the Smart Tutor system.
-
-Without this:
-
-No document ingestion
-
-No semantic retrieval
-
-No context pruning
-
-No cost optimization
-
-This module enables:
-
-Low-cost retrieval
-
-Faster LLM queries
-
-Scalable textbook indexing
-
-🚀 Future Integration
-
-This module will connect with:
-
-FastAPI backend
-
-LLM model (OpenAI / Gemini / etc.)
-
-Context pruning layer
-
-Token cost comparison system
-
-👑 Contribution
-
-This module handles the complete ingestion and vectorization pipeline and serves as the core retrieval engine for the Smart Tutor system.
+This allows distributed vector search.
