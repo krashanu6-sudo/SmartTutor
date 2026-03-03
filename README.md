@@ -148,7 +148,82 @@ data = supabase.table("book_chunks") \
     .eq("subject", "Science") \
     .eq("chapter", "Science_Ch01") \
     .execute()
+```
 
 Then rebuild FAISS index from stored embeddings.
 
 This allows distributed vector search.
+# 🏗 System Architecture
+
+## 🔹 High-Level Flow
+
+Supabase Storage (PDF)
+        ↓
+PDF Download
+        ↓
+Text Extraction
+        ↓
+Advanced Semantic Chunking
+        ↓
+Embedding Generation
+        ↓
+Supabase Table (book_chunks + embeddings)
+        ↓
+Teammate retrieves chunks
+        ↓
+Vector Search (FAISS)
+        ↓
+LLM Answer Generation
+
+
+---
+
+## 🔹 Layered Architecture
+
+### 1️⃣ Storage Layer
+- Supabase Storage → Stores textbook PDFs
+- Supabase Database → Stores chunks + embeddings
+
+### 2️⃣ Ingestion Layer (This Module)
+- Downloads PDF
+- Extracts text
+- Cleans text
+- Performs advanced chunking
+- Generates embeddings
+- Stores structured data in database
+
+### 3️⃣ Retrieval Layer
+- Fetch chunks from Supabase
+- Rebuild FAISS index
+- Perform semantic similarity search
+
+### 4️⃣ Generation Layer (Handled by teammate)
+- Apply context pruning
+- Send relevant chunks to LLM
+- Generate final answer
+
+---
+
+## 🔹 Responsibility Split
+
+### 👨‍💻 Ingestion (Krashanu)
+- Text extraction
+- Chunking
+- Embedding generation
+- Cloud storage design
+
+### 👨‍💻 Retrieval + LLM (Teammate)
+- Fetch chunks
+- Build vector search
+- Context pruning
+- AI answer generation
+
+---
+
+## 🔹 Why This Architecture?
+
+- Distributed processing
+- Scalable
+- Rebuildable vector index
+- Cost optimization ready
+- Clean separation of responsibilities
